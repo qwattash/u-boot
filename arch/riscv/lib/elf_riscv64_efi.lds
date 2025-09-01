@@ -24,14 +24,14 @@ SECTIONS
 		*(.gnu.linkonce.t.*)
 		*(.srodata)
 		*(.rodata*)
-		. = ALIGN(16);
-		*(.dynamic);
 		. = ALIGN(512);
 	}
 	.rela.dyn : { *(.rela.dyn) }
 	.rela.plt : { *(.rela.plt) }
 	.rela.got : { *(.rela.got) }
 	.rela.data : { *(.rela.data) *(.rela.data*) }
+        . = ALIGN(16);
+        .dynamic : { *(.dynamic) }
 	_etext = .;
 	_text_size = . - _text;
 	. = ALIGN(4096);
