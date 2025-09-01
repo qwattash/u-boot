@@ -8,6 +8,7 @@
  * This file is inspired by arch/arm/lib/crt0_aarch64_efi.S
  */
 
+#include <asm/asm.h>
 #include <asm-generic/pe.h>
 
 #if __riscv_xlen == 64
@@ -178,6 +179,11 @@ section_table:
 		 IMAGE_SCN_MEM_READ | \
 		 IMAGE_SCN_CNT_INITIALIZED_DATA)
 
+
+	.option push
+#ifdef CONFIG_RISCV_ISA_ZCHERIPURECAP_ABI
+	.option nocapmode
+#endif
 	.align		12
 _start:
 	addi		sp, sp, -(SIZE_LONG * 3)
@@ -198,3 +204,4 @@ _start:
 
 0:	addi		sp, sp, (SIZE_LONG * 3)
 	ret
+	.option pop
