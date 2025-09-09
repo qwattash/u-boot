@@ -8,12 +8,10 @@
  * This file is inspired by arch/arm/lib/crt0_aarch64_efi.S
  */
 
+#include <asm/asm.h>
 #include <asm-generic/pe.h>
 
 #if __riscv_xlen == 64
-#define SIZE_LONG	8
-#define SAVE_LONG(reg, idx)	sd	reg, (idx*SIZE_LONG)(sp)
-#define LOAD_LONG(reg, idx)	ld	reg, (idx*SIZE_LONG)(sp)
 #define PE_MACHINE	IMAGE_FILE_MACHINE_RISCV64
 #define PE_MAGIC    IMAGE_NT_OPTIONAL_HDR64_MAGIC
 #define IMG_CHARACTERISTICS \
@@ -23,9 +21,6 @@
 	 IMAGE_FILE_LARGE_ADDRESS_AWARE | \
 	 IMAGE_FILE_DEBUG_STRIPPED)
 #else
-#define SIZE_LONG	4
-#define SAVE_LONG(reg, idx)	sw	reg, (idx*SIZE_LONG)(sp)
-#define LOAD_LONG(reg, idx)	lw	reg, (idx*SIZE_LONG)(sp)
 #define PE_MACHINE	IMAGE_FILE_MACHINE_RISCV32
 #define PE_MAGIC    IMAGE_NT_OPTIONAL_HDR32_MAGIC
 #define IMG_CHARACTERISTICS \
@@ -180,21 +175,21 @@ section_table:
 
 	.align		12
 _start:
-	addi		sp, sp, -(SIZE_LONG * 3)
-	SAVE_LONG(a0, 0)
-	SAVE_LONG(a1, 1)
-	SAVE_LONG(ra, 2)
+	PTR_ADDI	PREG(sp), PREG(sp), -(SZREG * 3)
+	REG_S	REG(a0), 0(REG(sp))
+	REG_S	REG(a1), (1 * SZREG)(REG(sp))
+	REG_S	REG(ra), (2 * SZREG)(REG(sp))
 
-	lla		a0, ImageBase
-	lla		a1, _DYNAMIC
+	PC_PTR_L	PREG(a0), ImageBase
+	PC_PTR_L	PREG(a1), _DYNAMIC
 	call		_relocate
 	bne		a0, zero, 0f
 
-	LOAD_LONG(a1, 1)
-	LOAD_LONG(a0, 0)
+	REG_L	REG(a1), (1 * SZREG)(REG(sp))
+	REG_L	REG(a0), 0(REG(sp))
 	call		efi_main
 
-	LOAD_LONG(ra, 2)
+	REG_L	REG(ra), (2 * SZREG)(REG(sp))
 
-0:	addi		sp, sp, (SIZE_LONG * 3)
+0:	PTR_ADDI	PREG(sp), PREG(sp), (SZREG * 3)
 	ret

@@ -85,6 +85,7 @@
 
 #define PC_PTR_L	__ASM_STR(llc)
 #define PTR_L		__ASM_STR(lgc)
+#define PTR_ADDI	__ASM_STR(caddi)
 
 #define PTR_REG	    "C"
 
@@ -129,6 +130,7 @@
 
 #define PC_PTR_L	__ASM_STR(la)
 #define PTR_L		__ASM_STR(la)
+#define PTR_ADDI	__ASM_STR(addi)
 
 #define PTR_REG	    "r"
 
