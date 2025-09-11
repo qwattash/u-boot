@@ -92,7 +92,7 @@ SECTIONS
 		__captable_end = .;
 	}
 	. = ALIGN(16);
-#else
+#endif
 	/DISCARD/ : { *(.rela.plt*) }
 	.rela.dyn : {
 		__rel_dyn_start = .;
@@ -109,8 +109,6 @@ SECTIONS
 	}
 
 	. = ALIGN(8);
-#endif
-
 	_end = .;
 
 	.bss : {
