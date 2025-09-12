@@ -385,7 +385,7 @@ static efi_status_t copy_fdt(void **fdtp)
 	unsigned long fdt_ram_start = -1L, fdt_pages;
 	efi_status_t ret = 0;
 	void *fdt, *new_fdt;
-	u64 new_fdt_addr;
+	uintptr_t new_fdt_addr;
 	uint fdt_size;
 	int i;
 
@@ -415,11 +415,11 @@ static efi_status_t copy_fdt(void **fdtp)
 		log_err("ERROR: Failed to reserve space for FDT\n");
 		goto done;
 	}
-	new_fdt = (void *)(uintptr_t)new_fdt_addr;
+	new_fdt = (void *)new_fdt_addr;
 	memcpy(new_fdt, fdt, fdt_totalsize(fdt));
 	fdt_set_totalsize(new_fdt, fdt_size);
 
-	*fdtp = (void *)(uintptr_t)new_fdt_addr;
+	*fdtp = (void *)new_fdt_addr;
 done:
 	return ret;
 }

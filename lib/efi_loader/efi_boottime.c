@@ -430,9 +430,11 @@ static efi_status_t EFIAPI efi_allocate_pages_ext(int type, int memory_type,
 						  uint64_t *memory)
 {
 	efi_status_t r;
+        uintptr_t addr;
 
 	EFI_ENTRY("%d, %d, 0x%zx, %p", type, memory_type, pages, memory);
-	r = efi_allocate_pages(type, memory_type, pages, memory);
+	r = efi_allocate_pages(type, memory_type, pages, &addr);
+        *memory = addr;
 	return EFI_EXIT(r);
 }
 
@@ -1947,7 +1949,7 @@ efi_status_t efi_load_image_from_file(struct efi_device_path *file_path,
 {
 	struct efi_file_handle *f;
 	efi_status_t ret;
-	u64 addr;
+	uintptr_t addr;
 	efi_uintn_t bs;
 
 	/* Open file */
@@ -1974,10 +1976,10 @@ efi_status_t efi_load_image_from_file(struct efi_device_path *file_path,
 	}
 
 	/* Read file */
-	EFI_CALL(ret = f->read(f, &bs, (void *)(uintptr_t)addr));
+	EFI_CALL(ret = f->read(f, &bs, (void *)addr));
 	if (ret != EFI_SUCCESS)
 		efi_free_pages(addr, efi_size_in_pages(bs));
-	*buffer = (void *)(uintptr_t)addr;
+	*buffer = (void *)addr;
 	*size = bs;
 error:
 	EFI_CALL(f->close(f));
@@ -2005,7 +2007,8 @@ efi_status_t efi_load_image_from_path(bool boot_policy,
 	struct efi_device_path *dp, *rem;
 	struct efi_load_file_protocol *load_file_protocol = NULL;
 	efi_uintn_t buffer_size;
-	uint64_t addr, pages;
+	uintptr_t addr;
+        uint64_t pages;
 	const efi_guid_t *guid;
 	struct efi_handler *handler;
 
@@ -2048,13 +2051,13 @@ efi_status_t efi_load_image_from_path(bool boot_policy,
 	}
 	ret = EFI_CALL(load_file_protocol->load_file(
 					load_file_protocol, rem, boot_policy,
-					&buffer_size, (void *)(uintptr_t)addr));
+					&buffer_size, (void *)addr));
 	if (ret != EFI_SUCCESS)
 		efi_free_pages(addr, pages);
 out:
 	efi_close_protocol(device, guid, efi_root, NULL);
 	if (ret == EFI_SUCCESS) {
-		*buffer = (void *)(uintptr_t)addr;
+		*buffer = (void *)addr;
 		*size = buffer_size;
 	}
 

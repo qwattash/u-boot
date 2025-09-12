@@ -216,7 +216,7 @@ efi_var_mem_notify_virtual_address_map(struct efi_event *event, void *context)
 
 efi_status_t efi_var_mem_init(void)
 {
-	u64 memory;
+	uintptr_t memory;
 	efi_status_t ret;
 	struct efi_event *event;
 
@@ -226,7 +226,7 @@ efi_status_t efi_var_mem_init(void)
 				 &memory);
 	if (ret != EFI_SUCCESS)
 		return ret;
-	efi_var_buf = (struct efi_var_file *)(uintptr_t)memory;
+	efi_var_buf = (struct efi_var_file *)memory;
 	memset(efi_var_buf, 0, EFI_VAR_BUF_SIZE);
 	efi_var_buf->magic = EFI_VAR_FILE_MAGIC;
 	efi_var_buf->length = (uintptr_t)efi_var_buf->var -
