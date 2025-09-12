@@ -277,6 +277,10 @@ struct efi_mem_desc {
 	u32 type;
 	u32 reserved;
 	efi_physical_addr_t physical_start;
+        /*
+         * XXX-AM: Ideally, this would hold a capability in CHERI U-Boot.
+         * Avoid doing this for now, to keep the structure stable.
+         */
 	efi_virtual_addr_t virtual_start;
 	u64 num_pages;
 	u64 attribute;

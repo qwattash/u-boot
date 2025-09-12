@@ -14,6 +14,7 @@
 #include <mapmem.h>
 #include <watchdog.h>
 #include <asm/cache.h>
+#include <asm/cheri.h>
 #include <asm/global_data.h>
 #include <asm/sections.h>
 #include <linux/list_sort.h>
@@ -439,9 +440,13 @@ static efi_status_t efi_check_allocated(u64 addr, bool must_be_allocated)
  * @max_addr:	highest address to allocate
  * Return:	pointer to free memory area or 0
  */
-static uint64_t efi_find_free_memory(uint64_t len, uint64_t max_addr)
+static uintptr_t efi_find_free_memory(uint64_t len, uint64_t max_addr)
 {
 	struct efi_mem_list *lmem;
+
+#ifdef CONFIG_RISCV_ISA_ZCHERIPURECAP_ABI
+        void *efi_root_cap = cheri_infinite_cap_get();
+#endif
 
 	/*
 	 * Prealign input max address, so we simplify our matching
@@ -473,7 +478,11 @@ static uint64_t efi_find_free_memory(uint64_t len, uint64_t max_addr)
 			continue;
 
 		/* Return the highest address in this map within bounds */
+#ifdef CONFIG_RISCV_ISA_ZCHERIPURECAP_ABI
+		return cheri_address_set((uintptr_t)efi_root_cap, ret);
+#else
 		return ret;
+#endif
 	}
 
 	return 0;
@@ -490,11 +499,11 @@ static uint64_t efi_find_free_memory(uint64_t len, uint64_t max_addr)
  */
 efi_status_t efi_allocate_pages(enum efi_allocate_type type,
 				enum efi_memory_type memory_type,
-				efi_uintn_t pages, uint64_t *memory)
+				efi_uintn_t pages, uintptr_t *memory)
 {
 	u64 len;
 	efi_status_t ret;
-	uint64_t addr;
+	uintptr_t addr;
 
 	/* Check import parameters */
 	if (memory_type >= EFI_PERSISTENT_MEMORY_TYPE &&
@@ -553,7 +562,7 @@ efi_status_t efi_allocate_pages(enum efi_allocate_type type,
  * @pages:	number of pages to be freed
  * Return:	status code
  */
-efi_status_t efi_free_pages(uint64_t memory, efi_uintn_t pages)
+efi_status_t efi_free_pages(uintptr_t memory, efi_uintn_t pages)
 {
 	efi_status_t ret;
 
@@ -589,9 +598,9 @@ void *efi_alloc_aligned_pages(u64 len, int memory_type, size_t align)
 	u64 req_pages = efi_size_in_pages(len);
 	u64 true_pages = req_pages + efi_size_in_pages(align) - 1;
 	u64 free_pages;
-	u64 aligned_mem;
+	uintptr_t aligned_mem;
 	efi_status_t r;
-	u64 mem;
+	uintptr_t mem;
 
 	/* align must be zero or a power of two */
 	if (align & (align - 1))
@@ -604,7 +613,7 @@ void *efi_alloc_aligned_pages(u64 len, int memory_type, size_t align)
 	if (align < EFI_PAGE_SIZE) {
 		r = efi_allocate_pages(EFI_ALLOCATE_ANY_PAGES, memory_type,
 				       req_pages, &mem);
-		return (r == EFI_SUCCESS) ? (void *)(uintptr_t)mem : NULL;
+		return (r == EFI_SUCCESS) ? (void *)mem : NULL;
 	}
 
 	r = efi_allocate_pages(EFI_ALLOCATE_ANY_PAGES, memory_type,
@@ -625,7 +634,7 @@ void *efi_alloc_aligned_pages(u64 len, int memory_type, size_t align)
 		efi_free_pages(mem, free_pages);
 	}
 
-	return (void *)(uintptr_t)aligned_mem;
+	return (void *)aligned_mem;
 }
 
 /**
@@ -639,7 +648,7 @@ void *efi_alloc_aligned_pages(u64 len, int memory_type, size_t align)
 efi_status_t efi_allocate_pool(enum efi_memory_type pool_type, efi_uintn_t size, void **buffer)
 {
 	efi_status_t r;
-	u64 addr;
+	uintptr_t addr;
 	struct efi_pool_allocation *alloc;
 	u64 num_pages = efi_size_in_pages(size +
 					  sizeof(struct efi_pool_allocation));
@@ -655,7 +664,7 @@ efi_status_t efi_allocate_pool(enum efi_memory_type pool_type, efi_uintn_t size,
 	r = efi_allocate_pages(EFI_ALLOCATE_ANY_PAGES, pool_type, num_pages,
 			       &addr);
 	if (r == EFI_SUCCESS) {
-		alloc = (struct efi_pool_allocation *)(uintptr_t)addr;
+		alloc = (struct efi_pool_allocation *)addr;
 		alloc->num_pages = num_pages;
 		alloc->checksum = checksum(alloc);
 		*buffer = alloc->data;
