@@ -48,6 +48,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define SMBIOS_MAX_STRING_BYTES 4096
+
 /**
  * struct map_sysinfo - Mapping of sysinfo strings to DT
  *
@@ -117,6 +119,8 @@ struct smbios_write_method {
 	const char *subnode_name;
 };
 
+static int smbios_string_table_len(const struct smbios_ctx *ctx);
+
 static const struct map_sysinfo *convert_sysinfo_to_dt(const char *node, const char *si)
 {
 	int i;
@@ -147,6 +151,11 @@ static int smbios_add_string(struct smbios_ctx *ctx, const char *str)
 
 	if (!str)
 		return 0;
+
+        if (smbios_string_table_len(ctx) + strlen(str) >=
+	    SMBIOS_MAX_STRING_BYTES) {
+		panic("SMBIOS string table is too large\n");
+        }
 
 	for (;;) {
 		if (!*p) {
@@ -330,7 +339,7 @@ static int smbios_write_type0(ulong *current, int handle,
 			      struct smbios_ctx *ctx)
 {
 	struct smbios_type0 *t;
-	int len = sizeof(struct smbios_type0);
+	int len = sizeof(struct smbios_type0) + SMBIOS_MAX_STRING_BYTES;
 
 	t = map_sysmem(*current, len);
 	memset(t, 0, sizeof(struct smbios_type0));
@@ -385,7 +394,7 @@ static int smbios_write_type1(ulong *current, int handle,
 			      struct smbios_ctx *ctx)
 {
 	struct smbios_type1 *t;
-	int len = sizeof(struct smbios_type1);
+	int len = sizeof(struct smbios_type1) + SMBIOS_MAX_STRING_BYTES;
 	char *serial_str = env_get("serial#");
 
 	t = map_sysmem(*current, len);
@@ -426,7 +435,7 @@ static int smbios_write_type2(ulong *current, int handle,
 			      struct smbios_ctx *ctx)
 {
 	struct smbios_type2 *t;
-	int len = sizeof(struct smbios_type2);
+	int len = sizeof(struct smbios_type2) + SMBIOS_MAX_STRING_BYTES;
 
 	t = map_sysmem(*current, len);
 	memset(t, 0, sizeof(struct smbios_type2));
@@ -463,7 +472,7 @@ static int smbios_write_type3(ulong *current, int handle,
 			      struct smbios_ctx *ctx)
 {
 	struct smbios_type3 *t;
-	int len = sizeof(struct smbios_type3);
+	int len = sizeof(struct smbios_type3) + SMBIOS_MAX_STRING_BYTES;
 
 	t = map_sysmem(*current, len);
 	memset(t, 0, sizeof(struct smbios_type3));
@@ -521,7 +530,7 @@ static int smbios_write_type4(ulong *current, int handle,
 			      struct smbios_ctx *ctx)
 {
 	struct smbios_type4 *t;
-	int len = sizeof(struct smbios_type4);
+	int len = sizeof(struct smbios_type4) + SMBIOS_MAX_STRING_BYTES;
 
 	t = map_sysmem(*current, len);
 	memset(t, 0, sizeof(struct smbios_type4));
@@ -546,7 +555,7 @@ static int smbios_write_type32(ulong *current, int handle,
 			       struct smbios_ctx *ctx)
 {
 	struct smbios_type32 *t;
-	int len = sizeof(struct smbios_type32);
+	int len = sizeof(struct smbios_type32) + SMBIOS_MAX_STRING_BYTES;
 
 	t = map_sysmem(*current, len);
 	memset(t, 0, sizeof(struct smbios_type32));
@@ -563,7 +572,7 @@ static int smbios_write_type127(ulong *current, int handle,
 				struct smbios_ctx *ctx)
 {
 	struct smbios_type127 *t;
-	int len = sizeof(struct smbios_type127);
+	int len = sizeof(struct smbios_type127) + SMBIOS_MAX_STRING_BYTES;
 
 	t = map_sysmem(*current, len);
 	memset(t, 0, sizeof(struct smbios_type127));
